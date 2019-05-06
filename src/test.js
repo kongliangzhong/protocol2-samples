@@ -148,7 +148,11 @@ async function doAuthorize() {
 }
 
 function numberToHex(n) {
-  return "0x" + n.toString(16);
+  if (n.startsWith("0x")) {
+    return n;
+  } else {
+    return "0x" + n.toString(16);
+  }
 }
 
 async function setupOrder(order, index) {
@@ -186,9 +190,9 @@ async function setupOrder(order, index) {
     const signAlgorithmIndex = index % 2;
     order.signAlgorithm = pjs.SignAlgorithm.EIP712;
   }
-  if (order.signAlgorithm === pjs.SignAlgorithm.EIP712 && !order.signerPrivateKey) {
-    throw new Error("order owner's privatekey not set");
-  }
+  // if (order.signAlgorithm === pjs.SignAlgorithm.EIP712 && !order.signerPrivateKey) {
+  //   throw new Error("order owner's privatekey not set");
+  // }
   // Fill in defaults (default, so these will not get serialized)
   order.version = 0;
   order.validUntil = order.validUntil ? order.validUntil : 0;
@@ -206,7 +210,6 @@ async function setupOrder(order, index) {
   order.trancheB = order.trancheB ? order.trancheB : "0x" + "0".repeat(64);
   order.transferDataS = order.transferDataS ? order.transferDataS : "0x";
 
-  await setOrderBalancesAndApprove(order);
 }
 
 /*
@@ -291,6 +294,27 @@ function createRings() {
   return ringsInfo;
 }
 
+async function test2() {
+  const order = {
+        amountS: "0xDE0B6B3A7640000", // WETH
+        amountB: "0x3635C9ADC5DEA00000", // LRC
+        feeAmount: "0xDE0B6B3A7640000", // LRC Fee
+        validSince: "0x5C2046A4",
+        owner: "0xFDa769A839DA57D88320E683cD20075f8f525a57",
+        tokenS: "0x3B39f10dC98b3fcd86a6d4837ff2BdF410710B94", // WETH
+        tokenB: "0x5eADE4Cbac9ecd6082Bb2A375185e2F8FCaeeb7F", // LRC
+        dualAuthAddr: "0x66D3444ad66fc32abCEC9B38A4181066b1146CCA",
+        wallet: "0x66D3444ad66fc32abCEC9B38A4181066b1146CCA",
+        feeToken: "0x5eADE4Cbac9ecd6082Bb2A375185e2F8FCaeeb7F",
+        walletSplitPercentage: 10
+  };
+
+  await setupOrder(order);
+  console.log("order:", order);
+  const orderHash = new pjs.OrderUtil(null).getOrderHash(order);
+  console.log("ORDER HASH: ", orderHash.toString('hex'));
+}
+
 async function test() {
   // do authorize first. only need to do it once for each set of protocol addresses.
   // (if you redeploy contracts, you get a new set of addresses)
@@ -304,6 +328,7 @@ async function test() {
 
   for (const order of ringsInfo.orders) {
     await setupOrder(order);
+    await setOrderBalancesAndApprove(order);
   }
 
   const ringsGenerator = new pjs.RingsGenerator(context);
@@ -325,4 +350,6 @@ async function test() {
 
 }
 
-test();
+// test();
+
+test2();
